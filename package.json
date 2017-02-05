@@ -1,0 +1,24 @@
+{
+  "name": "metadatacollect",
+  "version": "0.0.1",
+  "description": "commandline tool to collect metadata of files in directories using exiftool, md5sum, and chromaprint",
+  "main": "metadatacollect.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SebAlbert/metadatacollect.git"
+  },
+  "author": "Sebastian Albert",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/SebAlbert/metadatacollect/issues"
+  },
+  "homepage": "https://github.com/SebAlbert/metadatacollect#readme",
+  "dependencies": {
+    "shelljs": "^0.7.6",
+    "tar": "^2.2.1",
+    "unzipper": "^0.8.3"
+  }
+}

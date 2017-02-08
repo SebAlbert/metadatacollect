@@ -8,7 +8,7 @@ const tmp = require('tmp');
 function processDir(dir) {
     console.log("processDir(" + dir + ")");
     var exiftoolOutput = shell.exec(
-        'exiftool -json -u -U -n -g -r. -m -ext "*" "' + dir + '"',
+        'exiftool -json -u -U -n -g -r. -m -ext "*" ' + quoteFilename(dir),
         {silent: true}
     ).stdout;
 
@@ -16,10 +16,10 @@ function processDir(dir) {
         JSON.parse(exiftoolOutput) : [];
 
     return Promise.all(exiftoolMetadata.map(function(file) {
-            file.md5sum = shell.exec('md5sum -b "' + file.SourceFile + '"',
+            file.md5sum = shell.exec('md5sum -b ' + quoteFilename(file.SourceFile),
                     {silent: true}).stdout.split(/ /)[0];
             if (file.File.MIMEType && file.File.MIMEType.match(/^audio\//) || file.File.MIMEType == 'video/mp4')
-                file.chromaprint = JSON.parse(shell.exec('fpcalc -json "' + file.SourceFile + '"',
+                file.chromaprint = JSON.parse(shell.exec('fpcalc -json ' + quoteFilename(file.SourceFile),
                     {silent: true}).stdout);
             if (file.File.MIMEType == 'application/zip') {
                 const tmpDir = tmp.dirSync({unsafeCleanup: true});
@@ -47,18 +47,18 @@ function processDir(dir) {
                         })
                         ;
                     });*/
-                    shell.exec('unzip "' + file.SourceFile + '" -d "' +
-                            tmpDir.name + '"', {silent: true});
+                    shell.exec('unzip ' + quoteFilename(file.SourceFile) + ' -d ' +
+                            quoteFilename(tmpDir.name), {silent: true});
                     processDir(tmpDir.name)
                     .then(function(d) { file.zipContents = d; resolve(file)});
                 });
             } else if (file.File.MIMEType == 'application/x-gzip') {
                 const tmpDir = tmp.dirSync({unsafeCleanup: true});
                 return new Promise(function(resolve, reject) {
-                    shell.exec('cp -p "' + file.SourceFile + '" "' +
-                            tmpDir.name + '"', {silent: true});
-                    if (shell.exec('gunzip "' + tmpDir.name + '/' +
-                            file.File.FileName + '"', {silent: true}).code === 0)
+                    shell.exec('cp -p ' + quoteFilename(file.SourceFile) +
+                            quoteFilename(tmpDir.name), {silent: true});
+                    if (shell.exec('gunzip ' + quoteFilename(tmpDir.name + '/' +
+                            file.File.FileName), {silent: true}).code === 0)
                         processDir(tmpDir.name)
                         .then(function(d) { file.zipContents = d; resolve(file)});
                     else resolve(file);
@@ -66,8 +66,8 @@ function processDir(dir) {
             } else if (file.File.MIMEType == 'application/x-tar') {
                 const tmpDir = tmp.dirSync({unsafeCleanup: true});
                 return new Promise(function(resolve, reject) {
-                    shell.exec('tar xf "' + file.SourceFile + '" -p -C "' +
-                            tmpDir.name + '"', {silent: true});
+                    shell.exec('tar xf ' + quoteFilename(file.SourceFile) + ' -p -C ' +
+                            quoteFilename(tmpDir.name), {silent: true});
                     processDir(tmpDir.name)
                     .then(function(d) { file.tarContents = d; resolve(file)});
                 });
@@ -75,6 +75,11 @@ function processDir(dir) {
         }));
 }
 
+function quoteFilename(filename) {
+    return "'" + filename.replace(/'/g, "'\\''") + "'";
+}
+
 const dir = process.argv.length > 2 ? process.argv[2] : process.cwd();
 processDir(dir)
 .then(function(result) { console.log(JSON.stringify(result, null, '  ')); });
+
